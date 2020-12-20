@@ -491,6 +491,8 @@ var model = _interopRequireWildcard(require("./model.js"));
 
 var _recipeView = _interopRequireDefault(require("./views/recipeView.js"));
 
+var _searchView = _interopRequireDefault(require("./views/searchView.js"));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function () { return cache; }; return cache; }
@@ -503,7 +505,6 @@ const recipeContainer = document.querySelector('.recipe'); // https://forkify-ap
 const controlRecipes = async function () {
   try {
     const id = window.location.hash.slice(1);
-    console.log(id);
     if (!id) return;
 
     _recipeView.default.renderSpinner();
@@ -521,12 +522,31 @@ const controlRecipes = async function () {
   }
 };
 
+const controlSearchResults = async function () {
+  try {
+    const query = _searchView.default.getQuery();
+
+    if (!query) {
+      return;
+    }
+
+    console.log('query below');
+    console.log(query);
+    await model.loadSearchResults(query);
+    console.log(model.state.search.results);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 const init = function () {
   _recipeView.default.addHandlerRender(controlRecipes);
+
+  _searchView.default.addHandlerSearch(controlSearchResults);
 };
 
 init();
-},{"core-js/modules/es.string.replace":"4ZBYu","core-js/modules/es.typed-array.float32-array":"6vFQh","core-js/modules/es.typed-array.float64-array":"2eOQr","core-js/modules/es.typed-array.int8-array":"XYZw7","core-js/modules/es.typed-array.int16-array":"3h7FL","core-js/modules/es.typed-array.int32-array":"2wvgL","core-js/modules/es.typed-array.uint8-array":"2VDQl","core-js/modules/es.typed-array.uint8-clamped-array":"2bFdN","core-js/modules/es.typed-array.uint16-array":"10bKA","core-js/modules/es.typed-array.uint32-array":"3XrCq","core-js/modules/es.typed-array.from":"JJTD6","core-js/modules/es.typed-array.of":"1qtO8","core-js/modules/web.immediate":"BQdWp","core-js/modules/web.url":"5429i","core-js/modules/web.url.to-json":"31slQ","core-js/modules/web.url-search-params":"171FE","./model.js":"5cc2Y","./views/recipeView.js":"5K27E"}],"4ZBYu":[function(require,module,exports) {
+},{"core-js/modules/es.string.replace":"4ZBYu","core-js/modules/es.typed-array.float32-array":"6vFQh","core-js/modules/es.typed-array.float64-array":"2eOQr","core-js/modules/es.typed-array.int8-array":"XYZw7","core-js/modules/es.typed-array.int16-array":"3h7FL","core-js/modules/es.typed-array.int32-array":"2wvgL","core-js/modules/es.typed-array.uint8-array":"2VDQl","core-js/modules/es.typed-array.uint8-clamped-array":"2bFdN","core-js/modules/es.typed-array.uint16-array":"10bKA","core-js/modules/es.typed-array.uint32-array":"3XrCq","core-js/modules/es.typed-array.from":"JJTD6","core-js/modules/es.typed-array.of":"1qtO8","core-js/modules/web.immediate":"BQdWp","core-js/modules/web.url":"5429i","core-js/modules/web.url.to-json":"31slQ","core-js/modules/web.url-search-params":"171FE","./model.js":"5cc2Y","./views/recipeView.js":"5K27E","./views/searchView.js":"61k0n"}],"4ZBYu":[function(require,module,exports) {
 'use strict';
 var fixRegExpWellKnownSymbolLogic = require('../internals/fix-regexp-well-known-symbol-logic');
 var anObject = require('../internals/an-object');
@@ -5530,9 +5550,10 @@ exports.loadRecipe = loadRecipe;
 
 const loadSearchResults = async function (query) {
   try {
+    state.search.query = query;
     const data = await (0, _helpers.getJSON)(`${_config.API_URL}?search=${query}`);
     console.log(data);
-    data.data.recipes.map(rec => {
+    state.search.results = data.data.recipes.map(rec => {
       return {
         id: rec.id,
         title: rec.title,
@@ -5547,7 +5568,6 @@ const loadSearchResults = async function (query) {
 };
 
 exports.loadSearchResults = loadSearchResults;
-loadSearchResults('pizza');
 },{"regenerator-runtime":"6Rcwf","./config.js":"he5L7","./helpers.js":"rsHc2"}],"6Rcwf":[function(require,module,exports) {
 /**
  * Copyright (c) 2014-present, Facebook, Inc.
@@ -7054,6 +7074,56 @@ Fraction.primeFactors = function(n)
 
 module.exports.Fraction = Fraction
 
+},{}],"61k0n":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+function _classPrivateMethodGet(receiver, privateSet, fn) { if (!privateSet.has(receiver)) { throw new TypeError("attempted to get private field on non-instance"); } return fn; }
+
+function _classPrivateFieldGet(receiver, privateMap) { var descriptor = privateMap.get(receiver); if (!descriptor) { throw new TypeError("attempted to get private field on non-instance"); } if (descriptor.get) { return descriptor.get.call(receiver); } return descriptor.value; }
+
+var _parentEl = new WeakMap();
+
+var _clearInput = new WeakSet();
+
+class SearchView {
+  constructor() {
+    _clearInput.add(this);
+
+    _parentEl.set(this, {
+      writable: true,
+      value: document.querySelector('.search')
+    });
+  }
+
+  getQuery() {
+    const query = _classPrivateFieldGet(this, _parentEl).querySelector('.search__field').value;
+
+    _classPrivateMethodGet(this, _clearInput, _clearInput2).call(this);
+
+    return query;
+  }
+
+  addHandlerSearch(handler) {
+    _classPrivateFieldGet(this, _parentEl).addEventListener('submit', function (e) {
+      e.preventDefault();
+      handler();
+    });
+  }
+
+}
+
+var _clearInput2 = function _clearInput2() {
+  _classPrivateFieldGet(this, _parentEl).querySelector('.search__field').value = '';
+};
+
+var _default = new SearchView();
+
+exports.default = _default;
 },{}]},{},["6GPhY","4iKEs","I5Uh7"], "I5Uh7", "parcelRequirefade")
 
 //# sourceMappingURL=index.899adfd8.js.map
